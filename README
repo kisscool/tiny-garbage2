@@ -16,11 +16,8 @@ If you want an amazingly fast and scalable software based on MongoDB, albeit les
 == Dependencies
 
 Required gems are :
-- dm-core
-- dm-migrations
-- dm-is-tree
-- dm-aggregates
-- dm-sqlite-adapter (or dm-mysql-adapter, depending on your need)
+- mongo
+- bson_ext
 - sinatra
 - haml
 - sass
@@ -29,10 +26,6 @@ Required gems are :
 
 If you have Bundler installed on your system, you can track down all those dependencies by launching the following command from inside the project directory :
 $ bundle install --path vendor
-
-If you want only MySQL dependencies, you can use :
-* bundle install --path vendor --without sqlite
-(idem if you do want only sqlite dependencies)
 
 == Install
 
@@ -46,6 +39,7 @@ Configure your crontab to launch periodically the following commands :
 
 
 = The Web UI part
+
 For a first try you can just launch "rackup config.ru" in order to test the web UI with the pure ruby Webrick server.
 If you want to deploy it in production, you will want to check Unicorn, Thin or Phusion Passenger documentations for more solids options.
 

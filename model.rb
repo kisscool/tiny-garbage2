@@ -9,14 +9,11 @@ begin
   require 'bundler/setup'
 rescue LoadError
 end
-# let's load the DM stuff
-#require 'dm-core'
-#require 'dm-is-tree'
-#require 'dm-aggregates'
+# let's load the Mongo stuff
 require 'mongo'
 include Mongo
 
-# a lot of this code has been forked from Zouchaoqun's ezFtpSearch project
+# some of this code has been derived from Zouchaoqun's ezFtpSearch project
 # kuddos to his work
 
 # the code has now become very different than ezFtpSearch
@@ -34,8 +31,6 @@ require File.join(File.dirname(__FILE__), './config.rb')
 #
 # the Entry class is a generic class for fields and directories 
 class Entry
-#  include Mongoid::Document
-#  include Mongoid::Tree
 #  property :id,             Serial
 #  field :parent_id,      Integer, :index => true
 ##  field :entries_count,  :type => Integer, :default => 0, :required => true
@@ -46,14 +41,11 @@ class Entry
 ##  field :index_version,  :type => Integer, :default => 0, :required => true#, :index => true # will help us avoid duplication during indexing
   #property :ftp_server_id,  Integer, :required => true, :key => true
 
-#  belongs_to :ftp_server
-##  referenced_in :ftp_server, :inverse_of => :entries
-##  embedded_in :ftp_server, :inverse_of => :entries
-#  is :tree, :order => :name
-@@collection = $db['entries']
-def self.collection
-  @@collection
-end
+  # this is the point of entry to every entries
+  @@collection = $db['entries']
+  def self.collection
+    @@collection
+  end
 
   ### methods
 
@@ -179,22 +171,12 @@ class FtpServer
 #  field :last_ping,      :type => DateTime
 #  field :is_alive,       :type => Boolean, :default => false
 
-#attr_accessor :collection
-@@collection = $db['ftp_servers']
-def self.collection
-  @@collection
-end
 
-  # each FtpServer is linked to entries from the Entry class
-  # so we don't have to bother wether the entries are currently
-  # in swap or not during our searches
-#  has n, :entries
-##  references_many :entries, :dependent => :delete
-##  embeds_many :entries
-
-  # this association will permit us to do JOIN requests during search queries in
-  # order to return only relevant results (ie. those of the current valid index)
-#  has n, :versions, Entry, :parent_key => [ :id, :index_version ], :child_key => [ :ftp_server_id, :index_version ]
+  # point of entry for every FTP servers
+  @@collection = $db['ftp_servers']
+  def self.collection
+    @@collection
+  end
 
   ## methods ##
   
@@ -242,7 +224,7 @@ end
           :ftp_encoding => 'ISO-8859-1',
           :force_utf8  => true,
           :login     => 'anonymous',
-          :password  => 'garbage',
+          :password  => 'garbage2',
           :ignored_dirs => '. .. .svn',
           :index_version => 0,          
           :is_alive   => is_alive,
@@ -310,13 +292,12 @@ end
       # updating our index_version
       self.collection.update(
         { "_id" => ftp_server["_id"] },
-        { "$set" => {
-          :index_version   => ftp_server["index_version"] + 1,
-          :updated_on  => Time.now
-          }
+        { "$set" => { :updated_on  => Time.now },
+          "$inc" => { :index_version   =>  1 }
         }
       )
-
+      
+      # remove old entries from the datastore
       Entry.collection.remove({'ftp_server_id' => ftp_server['_id'], 'index_version' => {'$lte' => ftp_server['index_version']}})
       @logger.info("on #{ftp_server['host']} : Old ftp entries deleted after get entries")
 
@@ -328,7 +309,7 @@ end
       @logger.error("on #{ftp_server['host']} : Get entry list exception: " + detail.class.to_s + " detail: " + detail.to_s)
       @logger.error("on #{ftp_server['host']} : Retrying #{get_list_retries}/#{@max_retries}.")
       raise if (get_list_retries >= @max_retries)
-      #retry
+      retry
     ensure
       ftp.close if !ftp.closed?
       @logger.info("on #{ftp_server['host']} : Ftp connection closed.")
@@ -406,9 +387,9 @@ private
       
       entry_basename = entry.basename.gsub("'","''")
      
-      # the sql query from the legacy code has been replaced by a DM
-      # insertion, apparently without sensible loss of performance
-      # (only preliminary test)
+      # here we build the document
+      # that will be inserted in
+      # the datastore
       item = {
         :name => entry_basename,
         :parent_path => parent_path,

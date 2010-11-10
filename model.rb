@@ -10,9 +10,11 @@ begin
 rescue LoadError
 end
 # let's load the DM stuff
-require 'dm-core'
-require 'dm-is-tree'
-require 'dm-aggregates'
+#require 'dm-core'
+#require 'dm-is-tree'
+#require 'dm-aggregates'
+require 'mongo'
+include Mongo
 
 # a lot of this code has been forked from Zouchaoqun's ezFtpSearch project
 # kuddos to his work
@@ -25,7 +27,7 @@ require 'dm-aggregates'
 
 # here we load config options
 require File.join(File.dirname(__FILE__), './config.rb')
-
+$db = Mongo::Connection.new.db("garbage")
 
 ###############################################################################
 ################### ORM MODEL CODE (do not edit if you don't know)
@@ -33,19 +35,26 @@ require File.join(File.dirname(__FILE__), './config.rb')
 #
 # the Entry class is a generic class for fields and directories 
 class Entry
-  include DataMapper::Resource
-  property :id,             Serial
-  property :parent_id,      Integer, :index => true
-  property :entries_count,  Integer, :default => 0, :required => true
-  property :name,           String, :required => true, :length => 255, :index => true
-  property :size,           Float
-  property :entry_datetime, DateTime
-  property :directory,      Boolean, :default => false, :required => true
-  property :index_version,  Integer, :default => 0, :required => true, :index => true # will help us avoid duplication during indexing
+#  include Mongoid::Document
+#  include Mongoid::Tree
+#  property :id,             Serial
+#  field :parent_id,      Integer, :index => true
+##  field :entries_count,  :type => Integer, :default => 0, :required => true
+##  field :name,           :type => String, :required => true, :length => 255#, :index => true
+##  field :size,           :type => Float
+##  field :entry_datetime, :type => DateTime
+##  field :directory,      :type => Boolean, :default => false, :required => true
+##  field :index_version,  :type => Integer, :default => 0, :required => true#, :index => true # will help us avoid duplication during indexing
   #property :ftp_server_id,  Integer, :required => true, :key => true
 
-  belongs_to :ftp_server
-  is :tree, :order => :name
+#  belongs_to :ftp_server
+##  referenced_in :ftp_server, :inverse_of => :entries
+##  embedded_in :ftp_server, :inverse_of => :entries
+#  is :tree, :order => :name
+@@collection = $db['entries']
+def self.collection
+  @@collection
+end
 
   ### methods
 
@@ -60,13 +69,13 @@ class Entry
   end
 
   # gives the full path of the entry
-  def full_path
-    ancestors_path + name
+  def self.full_path(entry)
+    entry['parent_path'].to_s + "/" + entry['name'].to_s
   end
 
   # gives the remote path of the entry, eg. ftp://host/full_path
-  def remote_path
-    ftp_server.url + '/' +full_path
+  def self.remote_path(entry)
+    FtpServer.url(FtpServer.collection.find_one('_id' => entry['ftp_server_id'])) + '/' + self.full_path(entry)
   end
 
   # no need to explain
@@ -103,30 +112,48 @@ class Entry
     online ||= true
 
     # we build the order object
-    t = order.split('.')
-    build_order = DataMapper::Query::Operator.new(t[0], t[1] || 'asc')
+    #t = order.split('.')
+    #build_order = DataMapper::Query::Operator.new(t[0], t[1] || 'asc')
 
-    # we build the base query
-    filter = {
-      :name.like => "%#{query}%",                       # search an entry through a string
-      #:index_version => FtpServer.first(:ftp_server).index_version,   # restrict to current index_version
-      :links => [FtpServer.relationships[:versions]],   # do a JOIN on index_version
-      :order => build_order,                            # apply a sort order
-      :limit => per_page,                               # limit the number of results
-      :offset => (page - 1) * per_page                  # with the following offset
-    }
-    # restrict the query to online FTP server or to every registered FTP servers
+    # we will get the list of FTP _ids we will check
     if online
-      filter.merge!({ :ftp_server => [:is_alive => true] })
+      ftp_list = FtpServer.collection.find('is_alive' => true).collect {|ftp| ftp['_id']}
+    else
+      ftp_list = FtpServer.collection.find.collect {|ftp| ftp['_id']}
     end
 
+    # we build the query
+    filter = {
+      'name' => /#{query}/,
+      'ftp_server_id' => {'$in' => ftp_list}
+    }
+    options = {
+      :limit => per_page,
+      :skip => (page - 1) * per_page,
+      :sort => [:ftp_server_id, 'ascending']
+    }
+
+    # we build the base query
+    #filter = {
+    #  :name.like => "%#{query}%",                       # search an entry through a string
+      #:index_version => FtpServer.first(:ftp_server).index_version,   # restrict to current index_version
+    #  :links => [FtpServer.relationships[:versions]],   # do a JOIN on index_version
+    #  :order => build_order,                            # apply a sort order
+    #  :limit => per_page,                               # limit the number of results
+    #  :offset => (page - 1) * per_page                  # with the following offset
+    #}
+    # restrict the query to online FTP server or to every registered FTP servers
+    #if online
+    #  filter.merge!({ :ftp_server => [:is_alive => true] })
+    #end
+
     # execute the query
-    results = Entry.all(filter)
+    results = Entry.collection.find(filter, options)
     
     # how many pages we will have
-    filter.delete(:limit)
-    filter.delete(:offset)
-    page_count = (Entry.count(filter).to_f / per_page).ceil
+    options.delete(:limit)
+    options.delete(:skip)
+    page_count = (Entry.collection.find(filter, options).count.to_f / per_page).ceil
 
     # finally we return both informations
     return [ page_count, results ]
@@ -137,31 +164,38 @@ end
 #
 # each server is documented here
 class FtpServer
-  include DataMapper::Resource
-  property :id,             Serial
-  property :name,           String, :required => true
-  property :host,           String, :required => true 
-  property :port,           Integer, :default => 21, :required => true
-  property :ftp_type,       String, :default => 'Unix', :required => true
-  property :ftp_encoding,   String, :default => 'ISO-8859-1'
-  property :force_utf8,     Boolean, :default => true, :required => true
-  property :login,          String, :default => 'anonymous', :required => true
-  property :password,       String, :default => 'garbage', :required => true
-  property :ignored_dirs,   String, :default => '. .. .svn'
-  property :note,           Text
-  property :index_version,  Integer, :default => 0, :required => true # will help us avoid duplication during indexing
-  property :updated_on,     DateTime
-  property :last_ping,      DateTime
-  property :is_alive,       Boolean, :default => false
+#  property :id,             Serial
+#  field :name,           :type => String, :required => true
+#  field :host,           :type => String, :required => true 
+#  field :port,           :type => Integer, :default => 21, :required => true
+#  field :ftp_type,       :type => String, :default => 'Unix', :required => true
+#  field :ftp_encoding,   :type => String, :default => 'ISO-8859-1'
+#  field :force_utf8,     :type => Boolean, :default => true, :required => true
+#  field :login,          :type => String, :default => 'anonymous', :required => true
+#  field :password,       :type => String, :default => 'garbage', :required => true
+#  field :ignored_dirs,   :type => String, :default => '. .. .svn'
+#  field :note,           :type => String
+#  field :index_version,  :type => Integer, :default => 0, :required => true # will help us avoid duplication during indexing
+#  field :updated_on,     :type => DateTime
+#  field :last_ping,      :type => DateTime
+#  field :is_alive,       :type => Boolean, :default => false
+
+#attr_accessor :collection
+@@collection = $db['ftp_servers']
+def self.collection
+  @@collection
+end
 
   # each FtpServer is linked to entries from the Entry class
   # so we don't have to bother wether the entries are currently
   # in swap or not during our searches
-  has n, :entries
+#  has n, :entries
+##  references_many :entries, :dependent => :delete
+##  embeds_many :entries
 
   # this association will permit us to do JOIN requests during search queries in
   # order to return only relevant results (ie. those of the current valid index)
-  has n, :versions, Entry, :parent_key => [ :id, :index_version ], :child_key => [ :ftp_server_id, :index_version ]
+#  has n, :versions, Entry, :parent_key => [ :id, :index_version ], :child_key => [ :ftp_server_id, :index_version ]
 
   ## methods ##
   
@@ -172,8 +206,8 @@ class FtpServer
   end
 
   # gives the url of the FTP
-  def url
-    "ftp://" + host
+  def self.url(ftp_server)
+    "ftp://" + ftp_server['host']
   end
 
   # gives the total size of the whole FTP Server
@@ -189,7 +223,7 @@ class FtpServer
   # handle the ping scan backend
   def self.ping_scan_result(host, is_alive)
     # fist we check if the host is known in the database
-    server = self.first(:host => host)
+    server = self.collection.find_one({'host' => host})
     if server.nil?
       # if the server doesn't exist
       if is_alive
@@ -201,25 +235,38 @@ class FtpServer
         rescue
           name = "anonymous ftp"
         end
-        self.create(
+        item = {
           :host       => host,
           :name       => name,
+          :port       => 21,
+          :ftp_type   => 'Unix',
+          :ftp_encoding => 'ISO-8859-1',
+          :force_utf8  => true,
+          :login     => 'anonymous',
+          :password  => 'garbage',
+          :ignored_dirs => '. .. .svn',
+          :index_version => 0,          
           :is_alive   => is_alive,
           :last_ping  => Time.now
-        )
+        }
+        self.collection.insert item
       end
     else
       # if the server exists in the database
       # then we update its status
-      server.update(
-        :is_alive   => is_alive,
-        :last_ping  => Time.now
+      self.collection.update(
+        { "_id" => server["_id"] },
+        { "$set" => {
+          :is_alive   => is_alive,
+          :last_ping  => Time.now
+          }
+        }
       )
     end
   end
 
   # this is the method which launch the process to index an FTP server
-  def get_entry_list(max_retries = 5)
+  def self.get_entry_list(ftp_server ,max_retries = 5)
     require 'net/ftp'
     require 'net/ftp/list'
     require 'iconv'
@@ -233,20 +280,20 @@ class FtpServer
       @logger = Logger.new(File.dirname(__FILE__) + '/log/spider.log', 'monthly')
       @logger.formatter = Logger::Formatter.new
       @logger.datetime_format = "%Y-%m-%d %H:%M:%S"
-      @logger.info("on #{host} : Trying ftp server #{name} (id=#{id})")
-      ftp = Net::FTP.open(host, login, password)
+      @logger.info("on #{ftp_server['host']} : Trying ftp server #{ftp_server['name']} (id=#{ftp_server['_id']})")
+      ftp = Net::FTP.open(ftp_server['host'], ftp_server['login'], ftp_server['password'])
       ftp.passive = true
     rescue => detail
       retries_count += 1
-      @logger.error("on #{host} : Open ftp exception: " + detail.class.to_s + " detail: " + detail.to_s)
-      @logger.error("on #{host} : Retrying #{retries_count}/#{@max_retries}.")
+      @logger.error("on #{ftp_server['host']} : Open ftp exception: " + detail.class.to_s + " detail: " + detail.to_s)
+      @logger.error("on #{ftp_server['host']} : Retrying #{retries_count}/#{@max_retries}.")
       if (retries_count >= @max_retries)
-        @logger.error("on #{host} : Retry reach max times, now exit.")
+        @logger.error("on #{ftp_server['host']} : Retry reach max times, now exit.")
         @logger.close
         exit
       end
       ftp.close if (ftp && !ftp.closed?)
-      @logger.error("on #{host} : Wait 30s before retry open ftp")
+      @logger.error("on #{ftp_server['host']} : Wait 30s before retry open ftp")
       sleep(30)
       retry
     end
@@ -254,32 +301,38 @@ class FtpServer
     # Trying to get ftp entry-list
     get_list_retries = 0
     begin
-      @logger.info("on #{host} : Server connected")
+      @logger.info("on #{ftp_server['host']} : Server connected")
       start_time = Time.now
       @entry_count = 0
       
       # building the index
-      get_list_of(ftp)
+      get_list_of(ftp_server, ftp)
+
       # updating our index_version
-      self.index_version += 1
-      self.updated_on = Time.now
-      save
-      
-      Entry.all(:ftp_server_id => id, :index_version.not => index_version).destroy
-      @logger.info("on #{host} : Old ftp entries deleted after get entries")
+      self.collection.update(
+        { "_id" => ftp_server["_id"] },
+        { "$set" => {
+          :index_version   => ftp_server["index_version"] + 1,
+          :updated_on  => Time.now
+          }
+        }
+      )
+
+      Entry.collection.remove({'ftp_server_id' => ftp_server['_id'], 'index_version' => {'$lte' => ftp_server['index_version']}})
+      @logger.info("on #{ftp_server['host']} : Old ftp entries deleted after get entries")
 
       process_time = Time.now - start_time
-      @logger.info("on #{host} : Finish getting list of server " + name + " in " + process_time.to_s + " seconds.")
-      @logger.info("on #{host} : Total entries: #{@entry_count}. #{(@entry_count/process_time).to_i} entries per second.")
+      @logger.info("on #{ftp_server['host']} : Finish getting list of server " + ftp_server['name'] + " in " + process_time.to_s + " seconds.")
+      @logger.info("on #{ftp_server['host']} : Total entries: #{@entry_count}. #{(@entry_count/process_time).to_i} entries per second.")
     rescue => detail
       get_list_retries += 1
-      @logger.error("on #{host} : Get entry list exception: " + detail.class.to_s + " detail: " + detail.to_s)
-      @logger.error("on #{host} : Retrying #{get_list_retries}/#{@max_retries}.")
+      @logger.error("on #{ftp_server['host']} : Get entry list exception: " + detail.class.to_s + " detail: " + detail.to_s)
+      @logger.error("on #{ftp_server['host']} : Retrying #{get_list_retries}/#{@max_retries}.")
       raise if (get_list_retries >= @max_retries)
-      retry
+      #retry
     ensure
       ftp.close if !ftp.closed?
-      @logger.info("on #{host} : Ftp connection closed.")
+      @logger.info("on #{ftp_server['host']} : Ftp connection closed.")
       @logger.close
     end
   end
@@ -289,36 +342,36 @@ private
   
 
   # get entries under parent_path, or get root entries if parent_path is nil
-  def get_list_of(ftp, parent_path = nil, parent_id = nil)
-    ic = Iconv.new('UTF-8', ftp_encoding) if force_utf8
-    ic_reverse = Iconv.new(ftp_encoding, 'UTF-8') if force_utf8
+  def self.get_list_of(ftp_server, ftp, parent_path = nil, parents = [])
+    ic = Iconv.new('UTF-8', ftp_server['ftp_encoding']) if ftp_server['force_utf8']
+    ic_reverse = Iconv.new(ftp_server['ftp_encoding'], 'UTF-8') if ftp_server['force_utf8']
 
     retries_count = 0
     begin
       entry_list = parent_path ? ftp.list(parent_path) : ftp.list
     rescue => detail
       retries_count += 1
-      @logger.error("on #{host} : Ftp LIST exception: " + detail.class.to_s + " detail: " + detail.to_s)
-      @logger.error("on #{host} : Retrying get ftp list #{retries_count}/#{@max_retries}")
+      @logger.error("on #{ftp_server['host']} : Ftp LIST exception: " + detail.class.to_s + " detail: " + detail.to_s)
+      @logger.error("on #{ftp_server['host']} : Retrying get ftp list #{retries_count}/#{@max_retries}")
       raise if (retries_count >= @max_retries)
       
       reconnect_retries_count = 0
       begin
         ftp.close if (ftp && !ftp.closed?)
-        @logger.error("on #{host} : Wait 30s before reconnect")
+        @logger.error("on #{ftp_server['host']} : Wait 30s before reconnect")
         sleep(30)
-        ftp.connect(host)
-        ftp.login(login, password)
+        ftp.connect(ftp_server['host'])
+        ftp.login(ftp_server['login'], ftp_server['password'])
         ftp.passive = true
       rescue => detail2
         reconnect_retries_count += 1
-        @logger.error("on #{host} : Reconnect ftp failed, exception: " + detail2.class.to_s + " detail: " + detail2.to_s)
-        @logger.error("on #{host} : Retrying reconnect #{reconnect_retries_count}/#{@max_retries}")
+        @logger.error("on #{ftp_server['host']} : Reconnect ftp failed, exception: " + detail2.class.to_s + " detail: " + detail2.to_s)
+        @logger.error("on #{ftp_server['host']} : Retrying reconnect #{reconnect_retries_count}/#{@max_retries}")
         raise if (reconnect_retries_count >= @max_retries)
         retry
       end
       
-      @logger.error("on #{host} : Ftp reconnected!")
+      @logger.error("on #{ftp_server['host']} : Ftp reconnected!")
       retry
     end
 
@@ -330,59 +383,53 @@ private
       # usefull for debugging purpose
       #puts "#{@entry_count} #{e}"
 
-      if force_utf8
+      if ftp_server['force_utf8']
         begin
           e_utf8 = ic.iconv(e)
         rescue Iconv::IllegalSequence
-          @logger.error("on #{host} : Iconv::IllegalSequence, file ignored. raw data: " + e)
+          @logger.error("on #{ftp_server['host']} : Iconv::IllegalSequence, file ignored. raw data: " + e)
           next
         end
       end
-      entry = Net::FTP::List.parse(force_utf8 ? e_utf8 : e)
+      entry = Net::FTP::List.parse(ftp_server['force_utf8'] ? e_utf8 : e)
 
-      next if ignored_dirs.include?(entry.basename)
+      next if ftp_server['ignored_dirs'].include?(entry.basename)
 
       @entry_count += 1
 
       begin
         file_datetime = entry.mtime.strftime("%Y-%m-%d %H:%M:%S")
       rescue => detail3
-        puts("on #{host} : strftime failed, exception: " + detail3.class.to_s + " detail: " + detail3.to_s)
-        @logger.error("on #{host} : strftime failed, exception: " + detail3.class.to_s + " detail: " + detail3.to_s)   
-        @logger.error("on #{host} : raw entry: " + e)
+        puts("on #{ftp_server['host']} : strftime failed, exception: " + detail3.class.to_s + " detail: " + detail3.to_s)
+        @logger.error("on #{ftp_server['host']} : strftime failed, exception: " + detail3.class.to_s + " detail: " + detail3.to_s)   
+        @logger.error("on #{ftp_server['host']} : raw entry: " + e)
       end
-
+      
       entry_basename = entry.basename.gsub("'","''")
      
       # the sql query from the legacy code has been replaced by a DM
       # insertion, apparently without sensible loss of performance
-      # (only preliminary test) 
-      new_entry = Entry.create!(
-        :parent_id => parent_id,
+      # (only preliminary test)
+      item = {
         :name => entry_basename,
+        :parent_path => parent_path,
         :size => entry.filesize,
         :entry_datetime => file_datetime,
         :directory => entry.dir?,
-        :ftp_server_id => id,
-        :index_version => index_version+1
-      )
+        :ftp_server_id => ftp_server['_id'],
+        :index_version => ftp_server['index_version']+1
+      }
+      Entry.collection.insert item
       
-      entry_id = new_entry.id
       if entry.dir?
         ftp_path = (parent_path ? parent_path : '') + '/' +
-                          (force_utf8 ? ic_reverse.iconv(entry.basename) : entry.basename)
-        get_list_of(ftp, ftp_path, entry_id)
+                          (ftp_server['force_utf8'] ? ic.iconv(entry.basename) : entry.basename)
+                          #(ftp_server['force_utf8'] ? ic_reverse.iconv(entry.basename) : entry.basename)
+        get_list_of(ftp_server, ftp, ftp_path, parents)
       end
-
     end
   end
 
 
-
 end
-
-
-# check and initialise properties
-DataMapper.finalize
-
 

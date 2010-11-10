@@ -27,7 +27,6 @@ include Mongo
 
 # here we load config options
 require File.join(File.dirname(__FILE__), './config.rb')
-$db = Mongo::Connection.new.db("garbage")
 
 ###############################################################################
 ################### ORM MODEL CODE (do not edit if you don't know)

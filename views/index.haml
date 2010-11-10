@@ -41,15 +41,17 @@
       %th Size
     - if not @results.nil?
       - @results.each do |entry|
+        - ftp_server = FtpServer.collection.find_one('_id' => entry['ftp_server_id'])
         %tr
           %td
-            %a{:title => entry.ftp_server.name, :href => entry.ftp_server.url}= entry.ftp_server.name
+            %a{:title => ftp_server['name'], :href => FtpServer.url(ftp_server)}= ftp_server['name']
           %td
-            %a{:title => entry.name, :href => url_utf8(entry.remote_path)}= entry.full_path
+            %a{:title => entry['name'], :href => url_utf8(Entry.remote_path(entry))}= Entry.full_path(entry)
           %td
-            = human_date(entry.entry_datetime)
+            = #human_date(entry['entry_datetime'])
+            = entry['entry_datetime']
           %td{:class => "resultsSize"}
-            = number_to_human_size(entry.get_size)
+            = number_to_human_size(entry['size'])
   - if not @page_count.nil? and @page_count > 1
     pages : 
     = @page_count

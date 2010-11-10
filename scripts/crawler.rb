@@ -34,11 +34,11 @@ def index
   # we prepare the threadpool
   pool = ThreadPool.new(5)
 
-  FtpServer.all(:is_alive => true).each do |ftp|
+  FtpServer.collection.find({'is_alive' => true}).each do |ftp|
     # we use thread in order to speed up the process
     pool.dispatch(ftp) do |ftp|
       # scan the following ftp
-      ftp.get_entry_list
+      FtpServer.get_entry_list ftp
     end
   end
 

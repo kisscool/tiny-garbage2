@@ -1,0 +1,12 @@
+## VIM
+*.swp
+# Bundler
+.bundle
+Gemfile.lock
+vendor
+# Saas cache
+.sass-cache
+## Project
+log/*
+db.sqlite3
+config.rb

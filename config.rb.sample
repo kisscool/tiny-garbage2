@@ -1,0 +1,34 @@
+# vim: set softtabstop=2 shiftwidth=2 expandtab :
+
+###############################################################################
+################### CONFIGURATION
+
+# in order to configure Tiny-Garbage, just copy config.rb.sample as 
+# config.rb, uncomment what you want and voila !
+
+
+# === Networks to scan ===
+
+# Here you can specify the format of the networks Tiny-Garbage will scan
+# in the following format : '10.2.0.* 10.3.0.1'
+NETWORKS = '10.2.0.*'
+
+
+# === Altering Behavior ===
+
+# only useful for debugging purpose
+#DataMapper::Logger.new($stdout, :debug)
+
+
+# === Database to use ===
+
+# by default we use a Sqlite backend
+# if you need better performances (eg. for a real deployment) then comment
+# the following line and read the following section
+DataMapper.setup(:default, "sqlite3://#{File.dirname(File.expand_path(__FILE__))}/db.sqlite3")
+
+# For an installation with MySQL :
+# 1. check that you did not install the bundled dependencies with a --without mysql option, or else do a "bundle install --path vendor --without sqlite"
+# 2. uncomment and complete the following line
+#DataMapper.setup(:default, "mysql://user:password@host/dbname?encoding=UTF-8")
+

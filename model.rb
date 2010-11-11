@@ -255,7 +255,7 @@ module FtpServer
           :login     => 'anonymous',
           :password  => 'garbage2',
           :ignored_dirs => '. .. .svn',
-          :index_version => 0,          
+          #:index_version => 0,          
           :is_alive   => is_alive,
           :last_ping  => Time.now
         }
@@ -426,7 +426,7 @@ private
         :entry_datetime => file_datetime,
         :directory => entry.dir?,
         :ftp_server_id => ftp_server['_id'],
-        :index_version => ftp_server['index_version']+1
+        :index_version => FtpServer.index_version+1
       }
       Entry.collection.insert item
       

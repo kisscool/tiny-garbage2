@@ -103,7 +103,7 @@ module Entry
 
     # we build the query
     filter = {
-      'name' => /#{query}/,
+      'name' => /#{query}/
     }
     # we will get the list of FTP _ids to check if online is true
     if online

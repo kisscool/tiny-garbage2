@@ -44,6 +44,8 @@ def index
 
   # we close the threadpool
   pool.shutdown
+  # and we purge old entries
+  Entry.purge
 end
 
 

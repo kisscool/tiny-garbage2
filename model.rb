@@ -30,7 +30,7 @@ require File.join(File.dirname(__FILE__), './config.rb')
 
 #
 # the Entry class is a generic class for fields and directories 
-class Entry
+module Entry
 #  property :id,             Serial
 #  field :parent_id,      Integer, :index => true
 ##  field :entries_count,  :type => Integer, :default => 0, :required => true
@@ -78,6 +78,17 @@ class Entry
     size
   end
 
+  # this method will purge every old entries
+  def self.purge
+    # first we bump the index_version of offline entries
+    ftp_list = FtpServer.list_by_status(false)
+    Entry.collection.update({ 'ftp_server_id' => {'$in' => ftp_list} }, {'$inc' => {'index_version' => 1}})
+    # we bump the global variable index_version
+    FtpServer.incr_index_version
+    # then we remove every entries with an index_version inferior to the global variable
+    Entry.collection.remove({'index_version' => {'$lte' => FtpServer.index_version}})
+  end
+
   # return an array of entries
   def self.search(query)
     Entry.all(:name.like => "%#{query}%", :order => [:ftp_server_id.desc])
@@ -106,18 +117,16 @@ class Entry
     #t = order.split('.')
     #build_order = DataMapper::Query::Operator.new(t[0], t[1] || 'asc')
 
-    # we will get the list of FTP _ids we will check
-    if online
-      ftp_list = FtpServer.collection.find('is_alive' => true).collect {|ftp| ftp['_id']}
-    else
-      ftp_list = FtpServer.collection.find.collect {|ftp| ftp['_id']}
-    end
-
     # we build the query
     filter = {
       'name' => /#{query}/,
-      'ftp_server_id' => {'$in' => ftp_list}
     }
+    # we will get the list of FTP _ids to check if online is true
+    if online
+      ftp_list = FtpServer.list_by_status(online)
+      filter.merge!({ 'ftp_server_id' => {'$in' => ftp_list} })
+    end
+
     options = {
       :limit => per_page,
       :skip => (page - 1) * per_page,
@@ -154,7 +163,7 @@ end
 
 #
 # each server is documented here
-class FtpServer
+module FtpServer
 #  property :id,             Serial
 #  field :name,           :type => String, :required => true
 #  field :host,           :type => String, :required => true 
@@ -200,6 +209,26 @@ class FtpServer
   def number_of_files
     Entry.all(:ftp_server_id => id, :index_version => index_version, :directory => false).count
   end
+
+  # gives the list of FTP servers _ids depending if they are online or offline
+  def self.list_by_status(state)
+    FtpServer.collection.find('is_alive' => state).collect {|ftp| ftp['_id']}
+  end
+
+  # the index_version is a variable global to all the FTP servers
+  def self.index_version
+    index_doc = $db['ftp_global'].find_one('name' => 'index_version')
+    if index_doc.nil?
+      $db['ftp_global'].insert({ 'name' => 'index_version', 'value' => 0 })
+      return 0
+    else
+      return index_doc['value']
+    end
+  end
+  def self.incr_index_version
+    $db['ftp_global'].update({'name' => 'index_version'}, {'$inc' => {'value' => 1}})
+  end
+
 
   # handle the ping scan backend
   def self.ping_scan_result(host, is_alive)
@@ -292,13 +321,13 @@ class FtpServer
       # updating our index_version
       self.collection.update(
         { "_id" => ftp_server["_id"] },
-        { "$set" => { :updated_on  => Time.now },
-          "$inc" => { :index_version   =>  1 }
+        { "$set" => { :updated_on  => Time.now }
+       #   "$inc" => { :index_version   =>  1 }
         }
       )
       
       # remove old entries from the datastore
-      Entry.collection.remove({'ftp_server_id' => ftp_server['_id'], 'index_version' => {'$lte' => ftp_server['index_version']}})
+      #Entry.collection.remove({'ftp_server_id' => ftp_server['_id'], 'index_version' => {'$lte' => ftp_server['index_version']}})
       @logger.info("on #{ftp_server['host']} : Old ftp entries deleted after get entries")
 
       process_time = Time.now - start_time

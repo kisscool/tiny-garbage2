@@ -167,13 +167,17 @@ module FtpServer
   end
 
   # gives the total size of the whole FTP Server
-  def size
-    Entry.sum(:size, :ftp_server_id => id, :index_version => index_version, :directory => false)
+  def self.size(ftp_server)
+    # not sure if it is actually the good method to do it
+    map    = "function() { emit(this.ftp_server_id, {size: this.size}); }"
+    reduce = "function(key, values) { var sum = 0; values.forEach(function(doc) {sum += doc.size}); return {size : sum};}"
+    results = Entry.collection.mapreduce(map, reduce, {:query => {'ftp_server_id' => ftp_server['_id'], 'index_version' => FtpServer.index_version, 'directory' => false}})
+    results.find_one('_id' => ftp_server['_id'])['value']['size']
   end
 
   # gives the number of files in the FTP
-  def number_of_files
-    Entry.all(:ftp_server_id => id, :index_version => index_version, :directory => false).count
+  def number_of_files(ftp_server)
+    Entry.collection.find('ftp_server_id' => ftp_server['_id'], 'index_version' => FtpServer.index_version, 'directory' => false).count
   end
 
   # gives the list of FTP servers _ids depending if they are online or offline

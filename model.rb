@@ -103,7 +103,8 @@ module Entry
 
     # we build the query
     filter = {
-      'name' => /#{query}/
+      'name' => /#{query}/,
+      'index_version' => FtpServer.index_version
     }
     # we will get the list of FTP _ids to check if online is true
     if online

@@ -31,15 +31,17 @@ require File.join(File.dirname(__FILE__), './config.rb')
 #
 # the Entry class is a generic class for fields and directories 
 module Entry
-#  property :id,             Serial
-#  field :parent_id,      Integer, :index => true
-##  field :entries_count,  :type => Integer, :default => 0, :required => true
-##  field :name,           :type => String, :required => true, :length => 255#, :index => true
-##  field :size,           :type => Float
-##  field :entry_datetime, :type => DateTime
-##  field :directory,      :type => Boolean, :default => false, :required => true
-##  field :index_version,  :type => Integer, :default => 0, :required => true#, :index => true # will help us avoid duplication during indexing
-  #property :ftp_server_id,  Integer, :required => true, :key => true
+  # example of a file entry :
+  # {
+  #   "_id"=>BSON::ObjectId('4cdbf81f2a2cd621f7000001'), 
+  #   "directory"=>true, 
+  #   "parent_path"=>"/animes/plip", 
+  #   "index_version"=>6, 
+  #   "entry_datetime"=>"2010-10-16 20:27:00", 
+  #   "ftp_server_id"=>BSON::ObjectId('4cdbf72e2a2cd621da000001'), 
+  #   "size"=>43, 
+  #   "name"=>"plop"
+  # }
 
   # this is the point of entry to every entries
   @@collection = $db['entries']
@@ -132,21 +134,22 @@ end
 #
 # each server is documented here
 module FtpServer
-#  property :id,             Serial
-#  field :name,           :type => String, :required => true
-#  field :host,           :type => String, :required => true 
-#  field :port,           :type => Integer, :default => 21, :required => true
-#  field :ftp_type,       :type => String, :default => 'Unix', :required => true
-#  field :ftp_encoding,   :type => String, :default => 'ISO-8859-1'
-#  field :force_utf8,     :type => Boolean, :default => true, :required => true
-#  field :login,          :type => String, :default => 'anonymous', :required => true
-#  field :password,       :type => String, :default => 'garbage', :required => true
-#  field :ignored_dirs,   :type => String, :default => '. .. .svn'
-#  field :note,           :type => String
-#  field :index_version,  :type => Integer, :default => 0, :required => true # will help us avoid duplication during indexing
-#  field :updated_on,     :type => DateTime
-#  field :last_ping,      :type => DateTime
-#  field :is_alive,       :type => Boolean, :default => false
+  # example of a FTP entry :
+  # {
+  #   "_id"=>BSON::ObjectId('4cdbf72e2a2cd621da000001'), 
+  #   "force_utf8"=>true, 
+  #   "ftp_encoding"=>"ISO-8859-1", 
+  #   "ftp_type"=>"Unix", 
+  #   "host"=>"192.168.0.5",
+  #   "port"=>21,
+  #   "ignored_dirs"=>". .. .svn", 
+  #   "is_alive"=>true, 
+  #   "last_ping"=>Thu Nov 11 14:01:18 UTC 2010, 
+  #   "login"=>"anonymous", 
+  #   "password"=>"garbage2"
+  #   "name"=>"My FTP", 
+  #   "updated_on"=>Thu Nov 11 14:09:19 UTC 2010
+  # }
 
 
   # point of entry for every FTP servers

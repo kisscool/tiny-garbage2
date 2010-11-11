@@ -86,7 +86,7 @@ module Entry
     # we bump the global variable index_version
     FtpServer.incr_index_version
     # then we remove every entries with an index_version inferior to the global variable
-    Entry.collection.remove({'index_version' => {'$lte' => FtpServer.index_version}})
+    Entry.collection.remove({'index_version' => {'$lt' => FtpServer.index_version}})
   end
 
   # return an array of entries

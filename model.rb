@@ -49,16 +49,6 @@ module Entry
 
   ### methods
 
-  # gives the full path of the directory above the entry
-  def ancestors_path
-    if parent
-      p = ancestors.join('/')
-      p + '/'
-    else
-      ''
-    end
-  end
-
   # gives the full path of the entry
   def self.full_path(entry)
     entry['parent_path'].to_s + "/" + entry['name'].to_s
@@ -69,14 +59,6 @@ module Entry
     FtpServer.url(FtpServer.collection.find_one('_id' => entry['ftp_server_id'])) + '/' + self.full_path(entry)
   end
 
-  # no need to explain
-  def to_s
-    name
-  end
-  
-  def get_size
-    size
-  end
 
   # this method will purge every old entries
   def self.purge
@@ -133,27 +115,13 @@ module Entry
       :sort => [:ftp_server_id, 'ascending']
     }
 
-    # we build the base query
-    #filter = {
-    #  :name.like => "%#{query}%",                       # search an entry through a string
-      #:index_version => FtpServer.first(:ftp_server).index_version,   # restrict to current index_version
-    #  :links => [FtpServer.relationships[:versions]],   # do a JOIN on index_version
-    #  :order => build_order,                            # apply a sort order
-    #  :limit => per_page,                               # limit the number of results
-    #  :offset => (page - 1) * per_page                  # with the following offset
-    #}
-    # restrict the query to online FTP server or to every registered FTP servers
-    #if online
-    #  filter.merge!({ :ftp_server => [:is_alive => true] })
-    #end
-
     # execute the query
     results = Entry.collection.find(filter, options)
     
     # how many pages we will have
-    options.delete(:limit)
-    options.delete(:skip)
-    page_count = (Entry.collection.find(filter, options).count.to_f / per_page).ceil
+    #options.delete(:limit)
+    #options.delete(:skip)
+    page_count = (Entry.collection.find(filter).count.to_f / per_page).ceil
 
     # finally we return both informations
     return [ page_count, results ]
@@ -189,11 +157,6 @@ module FtpServer
 
   ## methods ##
   
-  # always handy to have one
-  def to_s
-    "id:#{id} NAME:#{name} HOST:#{host} FTP_TYPE:#{ftp_type} LOGIN:#{login}
-     PASSWORD:#{password} IGNORED:#{ignored_dirs} NOTE:#{note}"
-  end
 
   # gives the url of the FTP
   def self.url(ftp_server)
@@ -225,6 +188,7 @@ module FtpServer
       return index_doc['value']
     end
   end
+  # increment the gobal index_version variable
   def self.incr_index_version
     $db['ftp_global'].update({'name' => 'index_version'}, {'$inc' => {'value' => 1}})
   end
@@ -255,7 +219,6 @@ module FtpServer
           :login     => 'anonymous',
           :password  => 'garbage2',
           :ignored_dirs => '. .. .svn',
-          #:index_version => 0,          
           :is_alive   => is_alive,
           :last_ping  => Time.now
         }
@@ -318,18 +281,13 @@ module FtpServer
       # building the index
       get_list_of(ftp_server, ftp)
 
-      # updating our index_version
+      # updating the time of last scan
       self.collection.update(
         { "_id" => ftp_server["_id"] },
         { "$set" => { :updated_on  => Time.now }
-       #   "$inc" => { :index_version   =>  1 }
         }
       )
       
-      # remove old entries from the datastore
-      #Entry.collection.remove({'ftp_server_id' => ftp_server['_id'], 'index_version' => {'$lte' => ftp_server['index_version']}})
-      @logger.info("on #{ftp_server['host']} : Old ftp entries deleted after get entries")
-
       process_time = Time.now - start_time
       @logger.info("on #{ftp_server['host']} : Finish getting list of server " + ftp_server['name'] + " in " + process_time.to_s + " seconds.")
       @logger.info("on #{ftp_server['host']} : Total entries: #{@entry_count}. #{(@entry_count/process_time).to_i} entries per second.")

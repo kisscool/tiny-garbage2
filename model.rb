@@ -108,7 +108,7 @@ module Entry
     }
     # we will get the list of FTP _ids to check if online is true
     if online
-      ftp_list = FtpServer.list_by_status(online)
+      ftp_list = FtpServer.list_by_status(true)
       filter.merge!({ 'ftp_server_id' => {'$in' => ftp_list} })
     end
 

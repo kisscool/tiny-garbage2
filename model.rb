@@ -271,7 +271,7 @@ module FtpServer
   end
 
   # this is the method which launch the process to index an FTP server
-  def self.get_entry_list(ftp_server ,max_retries = 5)
+  def self.get_entry_list(ftp_server ,max_retries = 3)
     require 'net/ftp'
     require 'net/ftp/list'
     require 'iconv'
@@ -354,7 +354,7 @@ private
       @logger.error("on #{ftp_server['host']} : Ftp LIST exception: " + detail.class.to_s + " detail: " + detail.to_s)
       @logger.error("on #{ftp_server['host']} : Ftp LIST exception: the parent_path (if present) was : " + parent_path)
       @logger.error("on #{ftp_server['host']} : Retrying get ftp list #{retries_count}/#{@max_retries}")
-      raise if (retries_count >= @max_retries)
+      return 0 if (retries_count >= @max_retries)
       
       reconnect_retries_count = 0
       begin

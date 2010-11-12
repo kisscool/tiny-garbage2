@@ -58,7 +58,7 @@ module Entry
 
   # gives the remote path of the entry, eg. ftp://host/full_path
   def self.remote_path(entry)
-    FtpServer.url(FtpServer.collection.find_one('_id' => entry['ftp_server_id'])) + '/' + self.full_path(entry)
+    FtpServer.url(FtpServer.collection.find_one('_id' => entry['ftp_server_id'])) + self.full_path(entry)
   end
 
 

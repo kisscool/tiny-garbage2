@@ -184,6 +184,15 @@ module FtpServer
     end
   end
 
+  # gives the added total sizes of every FTP servers
+  def self.added_total_size
+    sum = 0
+    FtpServer.collection.find.each do |a|
+      sum += a['total_size']
+    end
+    return sum
+  end
+
   # gives the number of files in the FTP
   def self.number_of_files(ftp_server)
     Entry.collection.find('ftp_server_id' => ftp_server['_id'], 'index_version' => FtpServer.index_version, 'directory' => false).count

@@ -42,7 +42,7 @@ class App < Sinatra::Base
       format_query(params[:query]), 
       params[:page].to_i, 
       params[:order],
-      params[:online]
+      object_to_boolean(params[:online])
     )
 
     # and smoke it

@@ -96,7 +96,6 @@ module Entry
     end
     order  ||= "ftp_server_id.ascending"
     online ||= true
-    online = object_to_boolean(online)
 
     # we build the query
     filter = {

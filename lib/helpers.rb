@@ -40,10 +40,11 @@ module MyHelpers
   end
 
   # prepare a string to be used as a search query
-  # eg. '"un espace" .flac' --> 'un espace%.flac'
+  # eg. '"un espace" .flac' --> 'un\ espace.*\.flac'
   def format_query(query='')
     tab = Shellwords.shellwords query
-    tab.join("%")
+    tab.collect! {|word| Regexp.quote(word)}
+    tab.join(".*")
   end
 
   # convert byte size in B, KB, MB.. human readable size

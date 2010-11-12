@@ -16,10 +16,10 @@ module MyHelpers
     URI::escape Iconv.new('latin1', 'utf-8').iconv(raw_url)
   end
 
+  # converions of datetimes in various output format strings
   def human_date(datetime)
     datetime.strftime('%d/%m/%Y').gsub(/ 0(\d{1})/, ' \1')
   end
-
   def human_time(datetime)
     return '' if datetime.nil?
     datetime.strftime('%d/%m/%Y %H:%M').gsub(/ 0(\d{1})/, ' \1')
@@ -28,6 +28,13 @@ module MyHelpers
     datetime.strftime("%Y-%m-%dT%H:%M:%SZ") # 2003-12-13T18:30:02Z
   end
 
+  # convert various objects in boolean
+  # especially useful to convert "true" and "false" in true and false
+  def object_to_boolean(value)
+    return [true, 'true', 1, '1', 'T', 't'].include?(value.class == String ? value.downcase : value)
+  end
+
+  # handy to generate only a partial html view
   def partial(page, locals={})
     haml page, {:layout => false}, locals
   end
@@ -54,13 +61,13 @@ module MyHelpers
     "%n %u".gsub(/%n/, ((number * 100).round.to_f / 100).to_s).gsub(/%u/, STORAGE_UNITS[exponent])
   end
   
+  # method to calculate what pages must be shown for a search
   def pager( page_count, page_current )
     display = [10, page_count].min
     return (1..display) if display < 10
     return (1..10) if page_current < 6
     return ((page_count-10)..page_count) if (page_count - page_current) < 5
     return ((page_current-5)..page_current+5)
-    
   end
 
 end

@@ -84,7 +84,7 @@ module Entry
   # page : offset of the page of results we must return
   # order : order string, in the form of "name", ""size" or "size.desc"
   # online : restrict the query to online FTP servers or to every known ones
-  def self.complex_search(query="", page=1, order="ftp_server_id.asc", online=true)
+  def self.complex_search(query="", page=1, order="ftp_server_id.ascending", online=true)
     # here we define how many results we want per page
     per_page = 20
 
@@ -94,12 +94,9 @@ module Entry
     if page < 1
      page = 1
     end
-    order ||= "ftp_server_id.asc"
+    order  ||= "ftp_server_id.ascending"
     online ||= true
-
-    # we build the order object
-    #t = order.split('.')
-    #build_order = DataMapper::Query::Operator.new(t[0], t[1] || 'asc')
+    online = object_to_boolean(online)
 
     # we build the query
     filter = {
@@ -115,7 +112,7 @@ module Entry
     options = {
       :limit => per_page,
       :skip => (page - 1) * per_page,
-      :sort => [:ftp_server_id, 'ascending']
+      :sort => order.split('.')
     }
 
     # execute the query
@@ -338,7 +335,7 @@ module FtpServer
     ensure
       ftp.close if !ftp.closed?
       @logger.info("on #{ftp_server['host']} : Ftp connection closed.")
-      # not the brightier solution, but closing the log device can be a real issue in a multi-threaded environment
+      # not the smartiest solution, but closing the log device can be a real issue in a multi-threaded environment
       #@logger.close
     end
   end

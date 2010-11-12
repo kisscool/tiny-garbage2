@@ -48,8 +48,7 @@
           %td
             %a{:title => entry['name'], :href => url_utf8(Entry.remote_path(entry))}= Entry.full_path(entry)
           %td
-            = #human_date(entry['entry_datetime'])
-            = entry['entry_datetime']
+            = human_date(entry['entry_datetime'])
           %td{:class => "resultsSize"}
             = number_to_human_size(entry['size'])
   - if not @page_count.nil? and @page_count > 1

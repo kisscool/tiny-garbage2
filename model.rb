@@ -204,8 +204,10 @@ module FtpServer
     # in case it is a symbol, we change it to a string
     value = value.to_s
     # then we order it
-    self.collection.find.to_a.sort! do |a,b| 
-      a[value] <=> b[value]
+    self.collection.find.to_a.sort! do |a,b|
+      a_time = a[value] || Time.at(0)   # in case the first scan has not happened
+      b_time = b[value] || Time.at(0)   # yet
+      a_time <=> b_time
     end.last[value]
   end
 
@@ -417,7 +419,6 @@ private
         :name => entry_basename,
         :parent_path => parent_path,
         :size => entry.filesize,
-#        :entry_datetime => file_datetime,
         :entry_datetime => entry.mtime,
         :directory => entry.dir?,
         :ftp_server_id => ftp_server['_id'],

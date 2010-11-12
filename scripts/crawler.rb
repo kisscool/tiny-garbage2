@@ -46,8 +46,10 @@ def index
   pool.shutdown
   # we purge old entries
   Entry.purge
-  # and we calculate total sizes for every FTP
+  # then we calculate total sizes for every FTP
   FtpServer.calculate_total_sizes
+  # and finaly we rebuild indexes
+  Entry.collection.create_index('name', :background => true)
 end
 
 

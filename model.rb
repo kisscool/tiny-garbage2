@@ -80,9 +80,9 @@ module Entry
 
   # return an array of entries
   # the params are :
-  # query : searched string, in the form of "%foo%bar%"
+  # query : searched regexps, in the form of "foo.*bar"
   # page : offset of the page of results we must return
-  # order : order string, in the form of "name", ""size" or "size.desc"
+  # order : order string, in the form of "name", ""size" or "size.descending"
   # online : restrict the query to online FTP servers or to every known ones
   def self.complex_search(query="", page=1, order="ftp_server_id.ascending", online=true)
     # here we define how many results we want per page
@@ -99,7 +99,7 @@ module Entry
 
     # we build the query
     filter = {
-      'name' => /#{query}/,
+      'name' => /#{query}/i,
       'index_version' => FtpServer.index_version
     }
     # we will get the list of FTP _ids to check if online is true
@@ -118,8 +118,6 @@ module Entry
     results = Entry.collection.find(filter, options)
     
     # how many pages we will have
-    #options.delete(:limit)
-    #options.delete(:skip)
     page_count = (Entry.collection.find(filter).count.to_f / per_page).ceil
 
     # finally we return both informations

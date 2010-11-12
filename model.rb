@@ -167,13 +167,20 @@ module FtpServer
     "ftp://" + ftp_server['host']
   end
 
-  # gives the total size of the whole FTP Server
-  def self.size(ftp_server)
+  # gives the total size of all the FTP Servers then insert it in ftp_servers
+  # documents for future check
+  # this method must be used as a batch after a global scan
+  def self.calculate_total_sizes
     # not sure if it is actually the good method to do it
     map    = "function() { emit(this.ftp_server_id, {size: this.size}); }"
     reduce = "function(key, values) { var sum = 0; values.forEach(function(doc) {sum += doc.size}); return {size : sum};}"
-    results = Entry.collection.mapreduce(map, reduce, {:query => {'ftp_server_id' => ftp_server['_id'], 'index_version' => FtpServer.index_version, 'directory' => false}})
-    results.find_one('_id' => ftp_server['_id'])['value']['size']
+    results = Entry.collection.mapreduce(map, reduce, {:query => {'index_version' => FtpServer.index_version, 'directory' => false}})
+    self.collection.find.each do |ftp| 
+      self.collection.update(
+        { "_id" => ftp["_id"] },
+        { "$set" => { :total_size   => results.find_one('_id' => ftp['_id'])['value']['size'] }}
+      )
+    end
   end
 
   # gives the number of files in the FTP

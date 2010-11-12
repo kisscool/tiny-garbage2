@@ -44,8 +44,10 @@ def index
 
   # we close the threadpool
   pool.shutdown
-  # and we purge old entries
+  # we purge old entries
   Entry.purge
+  # and we calculate total sizes for every FTP
+  FtpServer.calculate_total_sizes
 end
 
 

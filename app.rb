@@ -35,7 +35,7 @@ class App < Sinatra::Base
     # check our default arguments are valid
     params[:query] ||= ''
     params[:page]  ||= 1
-    params[:order] ||= 'ftp_server_id.asc'
+    params[:order] ||= 'ftp_server_id.ascending'
     
     # execute the search method
     @page_count, @results = Entry.complex_search(

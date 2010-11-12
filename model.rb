@@ -149,7 +149,8 @@ module FtpServer
   #   "login"=>"anonymous", 
   #   "password"=>"garbage2"
   #   "name"=>"My FTP", 
-  #   "updated_on"=>Thu Nov 11 14:09:19 UTC 2010
+  #   "updated_on"=>Thu Nov 11 14:09:19 UTC 2010,
+  #   "total_size"=>2477566119194.0
   # }
 
 

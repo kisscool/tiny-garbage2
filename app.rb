@@ -51,17 +51,17 @@ class App < Sinatra::Base
 
   # stats
   get '/stats' do
-    @total_count = FtpServer.all.count
-    @total_last_ping = FtpServer.max(:last_ping)
-    @total_last_scan = FtpServer.max(:updated_on)
-    @total_number_of_files = Entry.all(:links => [FtpServer.relationships[:versions]], :directory => false).count
+    @total_count = FtpServer.collection.count
+    @total_last_ping = FtpServer.global_last(:last_ping)
+    @total_last_scan = FtpServer.global_last(:updated_on)
+    @total_number_of_files = Entry.collection.find('index_version' => FtpServer.index_version, :directory => false).count
     @total_size = Entry.sum(:size, :links => [FtpServer.relationships[:versions]], :directory => false)
     haml :stats
   end
 
   # FTP listing
   get '/list' do
-    @ftp_list = FtpServer.all
+    @ftp_list = FtpServer.collection.find
     haml :list
   end
 

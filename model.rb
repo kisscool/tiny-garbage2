@@ -184,8 +184,19 @@ module FtpServer
   end
 
   # gives the number of files in the FTP
-  def number_of_files(ftp_server)
+  def self.number_of_files(ftp_server)
     Entry.collection.find('ftp_server_id' => ftp_server['_id'], 'index_version' => FtpServer.index_version, 'directory' => false).count
+  end
+
+  # give the latest selected value from every FTP
+  # example of values : last_ping or updated_on
+  def self.global_last(value)
+    # in case it is a symbol, we change it to a string
+    value = value.to_s
+    # then we order it
+    self.collection.find.to_a.sort! do |a,b| 
+      a[value] <=> b[value]
+    end.last[value]
   end
 
   # gives the list of FTP servers _ids depending if they are online or offline

@@ -37,8 +37,12 @@ def index
   FtpServer.collection.find({'is_alive' => true}).each do |ftp|
     # we use thread in order to speed up the process
     pool.dispatch(ftp) do |ftp|
-      # scan the following ftp
-      FtpServer.get_entry_list ftp
+      begin
+        # scan the following ftp
+        FtpServer.get_entry_list ftp
+      rescue => detail
+        puts "Exception on host " + ftp['host'] + ", exception: " + detail.class.to_s + " detail: " + detail.to_s
+      end
     end
   end
 

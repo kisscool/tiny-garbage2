@@ -357,6 +357,7 @@ private
     rescue => detail
       retries_count += 1
       @logger.error("on #{ftp_server['host']} : Ftp LIST exception: " + detail.class.to_s + " detail: " + detail.to_s)
+      @logger.error("on #{ftp_server['host']} : Ftp LIST exception: the parent_path (if present) was : " + parent_path)
       @logger.error("on #{ftp_server['host']} : Retrying get ftp list #{retries_count}/#{@max_retries}")
       raise if (retries_count >= @max_retries)
       

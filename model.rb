@@ -338,7 +338,8 @@ module FtpServer
     ensure
       ftp.close if !ftp.closed?
       @logger.info("on #{ftp_server['host']} : Ftp connection closed.")
-      @logger.close
+      # not the brightier solution, but closing the log device can be a real issue in a multi-threaded environment
+      #@logger.close
     end
   end
 

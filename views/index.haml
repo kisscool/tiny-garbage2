@@ -21,10 +21,10 @@
       #advancedOrder
         Order: 
         %select{:id => 'order', :name => 'order', :value => params[:order]}
-          %option{:value => 'ftp_server_id.asc', :selected => params[:order] == 'ftp_server_id.asc'} Server
-          %option{:value => 'name.asc', :selected => params[:order] == 'name.asc'} Name
-          %option{:value => 'entry_datetime.desc', :selected => params[:order] == 'entry_datetime.desc'} Date
-          %option{:value => 'size.desc', :selected => params[:order] == 'size.desc'} Size
+          %option{:value => 'ftp_server_id.ascending', :selected => params[:order] == 'ftp_server_id.ascending'} Server
+          %option{:value => 'name.ascending', :selected => params[:order] == 'name.ascending'} Name
+          %option{:value => 'entry_datetime.descending', :selected => params[:order] == 'entry_datetime.descending'} Date
+          %option{:value => 'size.descending', :selected => params[:order] == 'size.descending'} Size
       #advancedOnline
         Show offline:
         %select{:id => 'online', :name => 'online', :value => params[:online]}

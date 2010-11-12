@@ -417,7 +417,8 @@ private
         :name => entry_basename,
         :parent_path => parent_path,
         :size => entry.filesize,
-        :entry_datetime => file_datetime,
+#        :entry_datetime => file_datetime,
+        :entry_datetime => entry.mtime,
         :directory => entry.dir?,
         :ftp_server_id => ftp_server['_id'],
         :index_version => FtpServer.index_version+1

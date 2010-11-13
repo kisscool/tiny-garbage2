@@ -406,8 +406,9 @@ private
         @logger.error("on #{ftp_server['host']} : raw entry: " + e)
       end
       
-      entry_basename = entry.basename.gsub("'","''")
-     
+      #entry_basename = entry.basename.gsub("'","''")
+      entry_basename = entry.basename
+
       # here we build the document
       # that will be inserted in
       # the datastore

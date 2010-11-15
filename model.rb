@@ -66,7 +66,7 @@ module Entry
   def self.purge
     # first we bump the index_version of offline entries
     ftp_list = FtpServer.list_by_status(false)
-    Entry.collection.update({ 'ftp_server_id' => {'$in' => ftp_list} }, {'$inc' => {'index_version' => 1}})
+    Entry.collection.update({ 'ftp_server_id' => {'$in' => ftp_list} }, {'$inc' => {'index_version' => 1}}, :multi => true)
     # we bump the global variable index_version
     FtpServer.incr_index_version
     # then we remove every entries with an index_version inferior to the global variable

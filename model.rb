@@ -63,10 +63,11 @@ module Entry
 
 
   # this method will purge every old entries
-  def self.purge
+  # the offline ftp list is given as an argument so that we are sure
+  # it is the list as of the moment of the begining of the scan
+  def self.purge(ftp_offline)
     # first we bump the index_version of offline entries
-    ftp_list = FtpServer.list_by_status(false)
-    Entry.collection.update({ 'ftp_server_id' => {'$in' => ftp_list} }, {'$inc' => {'index_version' => 1}}, :multi => true)
+    Entry.collection.update({ 'ftp_server_id' => {'$in' => ftp_offline} }, {'$inc' => {'index_version' => 1}}, :multi => true)
     # we bump the global variable index_version
     FtpServer.incr_index_version
     # then we remove every entries with an index_version inferior to the global variable

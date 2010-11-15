@@ -34,6 +34,10 @@ def index
   # we prepare the threadpool
   pool = ThreadPool.new(5)
 
+  # we take note of offline nodes _ids
+  ftp_offline = FtpServer.list_by_status(false)
+
+  # then we iterate on online ones
   FtpServer.collection.find({'is_alive' => true}).each do |ftp|
     # we use thread in order to speed up the process
     pool.dispatch(ftp) do |ftp|
@@ -49,7 +53,7 @@ def index
   # we close the threadpool
   pool.shutdown
   # we purge old entries
-  Entry.purge
+  Entry.purge ftp_offline
   # then we calculate total sizes for every FTP
   FtpServer.calculate_total_sizes
   # and finaly we rebuild indexes

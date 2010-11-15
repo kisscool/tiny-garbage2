@@ -78,9 +78,9 @@ def expand_network(networks)
   expanded_ip_list.flatten
 end
 
-# check if an host is alive on the TCP port 21 (2 second timeout)
+# check if an host is alive on the TCP port 21 (3 second timeout)
 def ping_tcp(ip)
-  Ping.pingecho(ip, 2, 21)
+  Ping.pingecho(ip, 3, 21)
 end
 
 # check if we can make an FTP connexion with an host

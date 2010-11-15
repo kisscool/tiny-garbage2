@@ -75,11 +75,6 @@ module Entry
   end
 
   # return an array of entries
-  def self.search(query)
-    Entry.all(:name.like => "%#{query}%", :order => [:ftp_server_id.desc])
-  end
-
-  # return an array of entries
   # the params are :
   # query : searched regexps, in the form of "foo.*bar"
   # page : offset of the page of results we must return
@@ -183,7 +178,7 @@ module FtpServer
   def self.added_total_size
     sum = 0
     FtpServer.collection.find.each do |a|
-      sum += a['total_size']
+      sum += a['total_size'] || 0
     end
     return sum
   end
@@ -312,6 +307,7 @@ module FtpServer
       @entry_count = 0
       
       # building the index
+      @index_version = FtpServer.index_version
       get_list_of(ftp_server, ftp)
 
       # updating the time of last scan
@@ -420,7 +416,7 @@ private
         :entry_datetime => entry.mtime,
         :directory => entry.dir?,
         :ftp_server_id => ftp_server['_id'],
-        :index_version => FtpServer.index_version+1
+        :index_version => @index_version+1
       }
       Entry.collection.insert item
       

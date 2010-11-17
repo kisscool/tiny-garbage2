@@ -140,7 +140,8 @@ module FtpServer
   #   "password"=>"garbage2"
   #   "name"=>"My FTP", 
   #   "updated_on"=>Thu Nov 11 14:09:19 UTC 2010,
-  #   "total_size"=>2477566119194.0
+  #   "total_size"=>2477566119194.0,
+  #   "total_files"=>155086
   # }
 
 
@@ -186,10 +187,23 @@ module FtpServer
     end
     return sum
   end
+  
+  # gives the total number of files of all the FTP Servers then insert it in ftp_servers
+  # document for future check
+  # this method must be used as a batch after a global scan
+  def self.calculate_total_number_of_files
+    self.collection.find.each do |ftp|
+      number_of_files = Entry.collection.find('ftp_server_id' => ftp['_id'], 'index_version' => FtpServer.index_version, 'directory' => false).count
+      self.collection.update(
+        { "_id" => ftp["_id"] },
+        { "$set" => { :total_files => number_of_files }}
+      )
+    end
+  end
 
   # gives the number of files in the FTP
   def self.number_of_files(ftp_server)
-    Entry.collection.find('ftp_server_id' => ftp_server['_id'], 'index_version' => FtpServer.index_version, 'directory' => false).count
+    ftp_server['total_files'] || 0
   end
 
   # give the latest selected value from every FTP

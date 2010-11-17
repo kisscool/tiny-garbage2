@@ -54,8 +54,9 @@ def index
   pool.shutdown
   # we purge old entries
   Entry.purge ftp_offline
-  # then we calculate total sizes for every FTP
+  # then we calculate total sizes and total of files for every FTP
   FtpServer.calculate_total_sizes
+  FtpServer.calculate_total_number_of_files
   # and finaly we rebuild indexes
   Entry.collection.create_index('name', :background => true)
 end

@@ -167,7 +167,10 @@ module FtpServer
     reduce = "function(key, values) { var sum = 0; values.forEach(function(doc) {sum += doc.size}); return {size : sum};}"
     results = Entry.collection.mapreduce(map, reduce, {:query => {'index_version' => FtpServer.index_version, 'directory' => false}})
     self.collection.find.each do |ftp|
-      ftp_size = results.find_one('_id' => ftp['_id'])['value']['size'] || 0 
+      ftp_size = 0
+      result = results.find_one('_id' => ftp['_id'])
+      ftp_size = result['value']['size'] if ! result.nil?
+
       self.collection.update(
         { "_id" => ftp["_id"] },
         { "$set" => { :total_size => ftp_size }}

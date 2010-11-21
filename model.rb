@@ -298,7 +298,7 @@ module FtpServer
     # Trying to open ftp server, exit on max_retries
     retries_count = 0
     begin
-      @logger = Logger.new(File.dirname(__FILE__) + '/log/spider.log', 'monthly')
+      @logger = Logger.new(File.dirname(__FILE__) + '/log/spider.log', 0)
       @logger.formatter = Logger::Formatter.new
       @logger.datetime_format = "%Y-%m-%d %H:%M:%S"
       @logger.info("on #{ftp_server['host']} : Trying ftp server #{ftp_server['name']} (id=#{ftp_server['_id']})")
@@ -310,7 +310,7 @@ module FtpServer
       @logger.error("on #{ftp_server['host']} : Retrying #{retries_count}/#{@max_retries}.")
       if (retries_count >= @max_retries)
         @logger.error("on #{ftp_server['host']} : Retry reach max times, now exit.")
-        @logger.close
+        #@logger.close
         exit
       end
       ftp.close if (ftp && !ftp.closed?)

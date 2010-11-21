@@ -291,6 +291,8 @@ module FtpServer
     require 'iconv'
     require 'logger'
     @max_retries = max_retries.to_i
+    # with a value of 1 we will simply ignore charset errors without retry
+    @max_retries_get_list = 1
     BasicSocket.do_not_reverse_lookup = true
 
     # Trying to open ftp server, exit on max_retries
@@ -369,7 +371,7 @@ private
       @logger.error("on #{ftp_server['host']} : Ftp LIST exception: " + detail.class.to_s + " detail: " + detail.to_s)
       @logger.error("on #{ftp_server['host']} : Ftp LIST exception: the parent_path (if present) was : " + parent_path)
       @logger.error("on #{ftp_server['host']} : Retrying get ftp list #{retries_count}/#{@max_retries}")
-      return 0 if (retries_count >= @max_retries)
+      return 0 if (retries_count >= @max_retries_get_list)
       
       reconnect_retries_count = 0
       begin

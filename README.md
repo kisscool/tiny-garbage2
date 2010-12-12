@@ -18,6 +18,8 @@ The original Tiny-Garbage is already a complete and stable piece of software rea
 Dependencies
 ------------
 
+This software assumes you have already setup a Mongodb database and that ruby and iconv are available.
+
 Required gems are :
 
 * mongo

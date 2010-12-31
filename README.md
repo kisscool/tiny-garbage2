@@ -52,7 +52,18 @@ Configure your crontab to launch periodically the following commands :
 For a first try you can just launch "rackup config.ru" in order to test the web UI with the pure ruby Webrick server.
 If you want to deploy it in production, you will want to check Unicorn, Thin or Phusion Passenger documentations for more solids options.
 
+Screenshots
+-----------
+
+Here are some screenshots from a Tiny-Garbage2 V1 deployment transmitted to us by some of our friendly users.
+![Garbage Search][garbage search]
+![Garbage Listing][garbage listing]
+
+
 Thanks
 ------
 
-Thanks to Loic Gomez for the first Garbage Collector, which was so useful back in the days, and thanks to Zouchaoqun's [`ezFtpSearch`](http://github.com/zouchaoqun/ezftpsearch) whose model bootstrapped our work.
+Thanks to Loic Gomez for the first Garbage Collector, which was so useful back in the days, and thanks to Zouchaoqun's [`ezFtpSearch`](http://github.com/zouchaoqun/ezftpsearch) whose model bootstrapped our early work.
+
+[garbage search]: https://github.com/downloads/kisscool/tiny-garbage2/garbage_1.png
+[garbage listing]: https://github.com/downloads/kisscool/tiny-garbage2/garbage_2.png

@@ -56,8 +56,9 @@ Screenshots
 -----------
 
 Here are some screenshots from a Tiny-Garbage2 V1 deployment transmitted to us by some of our friendly users.
-![Garbage Search][garbage search]
-![Garbage Listing][garbage listing]
+
+![Search](https://github.com/downloads/kisscool/tiny-garbage2/garbage_1.png)
+![Listing](https://github.com/downloads/kisscool/tiny-garbage2/garbage_2.png)
 
 
 Thanks
@@ -65,5 +66,3 @@ Thanks
 
 Thanks to Loic Gomez for the first Garbage Collector, which was so useful back in the days, and thanks to Zouchaoqun's [`ezFtpSearch`](http://github.com/zouchaoqun/ezftpsearch) whose model bootstrapped our early work.
 
-[garbage search]: https://github.com/downloads/kisscool/tiny-garbage2/garbage_1.png
-[garbage listing]: https://github.com/downloads/kisscool/tiny-garbage2/garbage_2.png

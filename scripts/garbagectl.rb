@@ -71,7 +71,7 @@ when :name
   FtpServer.collection.update({:host => options[:host]}, {'$set' => {'name' => options[:name]}})
   puts "#{options[:host]}\t#{options[:name]}"
 when :delete 
-  Entry.collection.remove({'ftp_server_id' => {FtpServer.collection.find_one({:host => options[:host]})}['_id'] })
+  Entry.collection.remove({'ftp_server_id' => FtpServer.collection.find_one({:host => options[:host]})['_id'] })
   FtpServer.collection.remove({:host => options[:host]})
   puts "Host deleted and entries purged"
 else

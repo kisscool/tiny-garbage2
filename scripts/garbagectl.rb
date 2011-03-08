@@ -47,7 +47,6 @@ if [:delete, :info, :entries, :name].include?(options[:action]) and options[:hos
   exit
 end
 
-puts options[:action]
 
 ###########################################################
 ################### ACTIONS

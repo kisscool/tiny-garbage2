@@ -3,7 +3,7 @@
 # (c) 2011 KissCool & Madtree
 
 # loading the db model
-#require File.join(File.dirname(__FILE__), '../model.rb')
+require File.join(File.dirname(__FILE__), '../model.rb')
 
 require 'optparse'
 
@@ -54,7 +54,7 @@ puts options[:action]
 
 case options[:action]
 when :list
-  FtpServer.collection.each do |ftp|
+  FtpServer.collection.find().each do |ftp|
     puts "#{ftp['host']}\t#{ftp['name']}"
   end
 when :info

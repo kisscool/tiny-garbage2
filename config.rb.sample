@@ -23,5 +23,5 @@ NETWORKS = '10.2.0.*'
 # === Database to use ===
 
 # by default, we use a local mongodb
-$db = Mongo::Connection.new("localhost", 27017, :pool_size => 20, :timeout => 20).db("garbage")
+$db = Mongo::Connection.new("localhost", 27017, :pool_size => 20, :pool_timeout => 20).db("garbage")
 

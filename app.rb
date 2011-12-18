@@ -15,7 +15,7 @@ class App < Sinatra::Base
   helpers MyHelpers
 
   set :static, true
-  set :public, 'public/'
+  set :public_folder, 'public/'
 
   # loading the db model
   require File.join(File.dirname(__FILE__), 'model.rb')

@@ -7,6 +7,8 @@ Nothing else, nothing more.
 Relationship with the original Tiny-Garbage project
 ---------------------------------------------------
 
+Note : You should check the successor of Tiny-Garbage2 : [`Tiny-Garbage3`](http://github.com/kisscool/tiny-garbage3)
+
 Tiny-Garbage2 was designed to be the next version of the original [`Tiny-Garbage`](http://github.com/kisscool/tiny-garbage)
 The original goal was to re-implement the backend in MongoDB in order to help it scale past several hundred of thousands of indexed files. Unfortunately we quickly discovered it would definitively break our compatibility with more traditional RDBMS.
 
